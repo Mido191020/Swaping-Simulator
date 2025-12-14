@@ -1,0 +1,3 @@
+D:/clion/Virtual Memory Replacement Policy Simulator/cmake-build-debug/CMakeFiles/Virtual_Memory_Replacement_Policy_Simulator.dir
+D:/clion/Virtual Memory Replacement Policy Simulator/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/clion/Virtual Memory Replacement Policy Simulator/cmake-build-debug/CMakeFiles/rebuild_cache.dir
