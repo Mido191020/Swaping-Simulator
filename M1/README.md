@@ -1,141 +1,46 @@
-Absolutely 👍
-Here is a **clean, professional README** for **Milestone 0**, written like a real **educational OS project** — not overhyped, not vague.
+## 🧱 Milestone 1: FIFO Replacement Policy
 
-You can **copy-paste this directly** into `README.md`.
+In this milestone, we implemented the **First-In, First-Out (FIFO)** algorithm. This is the simplest baseline for page replacement.
 
----
+### 🧠 The Logic
 
-# Paging Simulator
+* **Concept:** Treat physical memory like a line at a grocery store. The first page to arrive is the first one to leave when space is needed.
+* **Data Structure:** We use a C++ `std::queue<int>` alongside our physical memory array.
+    * **On Miss (Placement):** The new VPN is pushed to the back of the queue.
+    * **On Eviction:** We `pop` the VPN from the front of the queue (the oldest) and invalidate that specific slot in the memory array.
+* **Hit Handling:** FIFO ignores hits. Accessing a page that is already in memory **does not** move it to the back of the line.
 
-An educational operating systems project that incrementally simulates **virtual memory paging**, inspired by
-**OSTEP – Operating Systems: Three Easy Pieces (Chapter: Beyond Physical Memory)**.
+### 🧪 Validation Scenario
 
-This repository is structured around **milestones**, where each milestone adds one well-defined OS concept.
+We verify correctness using a deterministic test case:
 
----
+1.  **Fill Phase:** Load pages `1` through `20`. Memory is now full.
+    * *Queue State:* `[Front: 1, ..., Back: 20]`
+2.  **Hit Phase:** Access `1`, `10`, `15`.
+    * *Result:* **HITS**. The queue order remains unchanged (Page 1 is still the "victim").
+3.  **Eviction Phase:** Access Page `21`.
+    * *Action:* Memory is full. The algorithm identifies Page `1` as the oldest.
+    * *Result:* Page `1` is evicted. Page `21` takes its slot.
+4.  **Verification Phase:** Access Page `1` again.
+    * *Result:* **MISS**. This proves Page 1 was successfully removed.
 
-## 🎯 Project Goal
-
-The goal of this project is to **deeply understand paging and page replacement policies** by building them
-step by step, exactly how a real OS would evolve internally.
-
-The focus is on:
-
-* Correct behavior
-* Clear state transitions
-* Accurate statistics
-* Learning-first design (not performance)
-
----
-
-## 📌 Milestone 0: Basic Paging (No Replacement Policy)
-
-### Description
-
-Milestone 0 implements the **baseline paging mechanism** without any page replacement policy.
-
-At this stage, the simulator can:
-
-* Detect **page hits**
-* Detect **page misses**
-* Distinguish **compulsory misses**
-* Load pages into free memory frames
-* Track paging statistics
-
-When memory is full and a miss occurs, the simulator **does not replace pages yet**.
-Replacement policies (FIFO, LRU, Clock, etc.) will be added in later milestones.
-
----
-
-### ✅ Features Implemented
-
-* Fixed-size physical memory (frame array)
-* Valid-bit based frame tracking
-* Page lookup logic
-* Hit vs miss detection
-* Compulsory miss handling
-* Statistics collection:
-
-  * Total accesses
-  * Hits
-  * Misses
-  * Compulsory misses
-* Simple test harness in `main()`
-
----
-
-### ❌ Not Implemented (By Design)
-
-* Page replacement policies
-* Eviction logic
-* Dirty bits
-* TLB simulation
-
-These are intentionally deferred to future milestones.
-
----
-
-## 🧪 Example Test
-
-Input page reference string:
-
-```
-1 2 3 2 1
-```
-
-Expected behavior:
-
-* First three accesses → compulsory misses
-* Last two accesses → hits
-
-Example output:
-
-```
-Access 1 -> MISS
-Access 2 -> MISS
-Access 3 -> MISS
-Access 2 -> HIT
-Access 1 -> HIT
-
-Accesses: 5
-Hits: 2
-Misses: 3
-Compulsory Misses: 3
-```
-
----
-
-## 🛠 Build & Run (WSL / Linux)
-
+### 💻 How to Run
 ```bash
-g++ -Wall -Wextra -std=c++17 main.cpp -o main
-./main
+# Compile
+g++ main.cpp -o vm_sim
+
+# Run (Generates input.txt automatically)
+./vm_sim
 ```
 
----
+### Expected Output
+```
+...
+Request: 21 ... MISS  <-- Eviction triggered (1 removed)
+Request: 1 ... MISS   <-- Verification successful (1 is gone)
 
-## 🧭 Roadmap
-
-* **Milestone 0** ✅ Basic paging (current)
-* **Milestone 1** ⏳ FIFO replacement policy
-* **Milestone 2** ⏳ LRU replacement policy
-* **Milestone 3** ⏳ Clock algorithm
-* **Milestone 4** ⏳ TLB simulation (optional)
-
----
-
-## 📚 References
-
-* *Operating Systems: Three Easy Pieces* — Remzi H. Arpaci-Dusseau
-* Chapter: **Beyond Physical Memory**
-
----
-
-## 📎 Notes
-
-This project is intended for **learning and experimentation**.
-Code clarity and correctness are prioritized over optimization.
-
----
-
-
+=== Final Results ===
+Hits:              3
+Misses:            22
+Compulsory Misses: 20
+```

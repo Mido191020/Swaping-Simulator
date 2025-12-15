@@ -1,84 +1,157 @@
 #include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <queue>
+
 using namespace std;
-#define UNIMPLEMENTED \
-    do { \
-        fprintf(stderr, "%s:%d: TODO: %s is not implemented yet\n", \
-                __FILE__, __LINE__, __func__); \
-        abort(); \
-    } while (0)
 
+// --- Constants & Structures ---
+const int Memory_size = 20;
 
-
-const int Memory_size=20;
 struct Stats {
     int accesses = 0;
     int hits = 0;
     int misses = 0;
     int compulsory_misses = 0;
 };
+
 struct MemoryFrame {
     int VPN = 0;       // Virtual Page Number
     bool is_valid = false;
 };
+
+// --- Globals ---
 MemoryFrame memory_table[Memory_size];
+queue<int> MemoryQueue; // Stores VPNs in arrival order
 Stats stats;
-void init_list(){
+
+// --- Helper Functions ---
+
+void init_list() {
     for (int i = 0; i < Memory_size; ++i) {
-        memory_table[i].is_valid = false; // empty initially
+        memory_table[i].is_valid = false; // Mark all slots empty
         memory_table[i].VPN = 0;
     }
-
 }
-bool check_Page(int VPN){
-    //TODO:loop on pages
+
+// The Evictor: Removes the oldest page and returns the freed slot index
+int free_frame() {
+    if (MemoryQueue.empty()) return -1; // Safety check
+
+    // 1. Get the oldest VPN from the Queue
+    int vpnToFree = MemoryQueue.front();
+    MemoryQueue.pop();
+
+    // 2. Find that VPN in the Hardware (Array)
+    for (int i = 0; i < Memory_size; ++i) {
+        if (memory_table[i].VPN == vpnToFree && memory_table[i].is_valid) {
+            // Found it! Kill it.
+            memory_table[i].is_valid = false;
+            return i; // Return the empty chair index so we can reuse it
+        }
+    }
+    return -1; // Should never happen if Queue and Table are synced
+}
+
+// The Manager: Handles Hits, Misses, and Placements
+int get_frame(int VPN) {
     stats.accesses++;
+
+    // 1. Search for HIT
     for (int i = 0; i < Memory_size; ++i) {
-        if (memory_table[i].VPN==VPN&&memory_table[i].is_valid){
+        if (memory_table[i].is_valid && memory_table[i].VPN == VPN) {
             stats.hits++;
-            return true;
+            return i; // HIT! Return the index where we found it
         }
     }
-    //handel Miss
+
+    // --- Handling MISS ---
     stats.misses++;
+
+    // 2. Try to find an Empty Slot (Compulsory Miss)
+    int target_index = -1;
     for (int i = 0; i < Memory_size; ++i) {
-        //page miss>? get page
-        //page vaild
-        //add it's VPN
-        //incrment comp
-        //use page from the array or what
-        //how we will do somthing like that
-        if (memory_table[i].is_valid== false){
-            memory_table[i].VPN=VPN;
-            memory_table[i].is_valid= true;
+        if (!memory_table[i].is_valid) {
+            target_index = i; // Found a free chair
             stats.compulsory_misses++;
-            return false;
+            break;
         }
     }
-    if (stats.compulsory_misses==Memory_size)
-        return false;
-    return false;
+
+    // 3. If No Empty Slot -> Must EVICT (Capacity Miss)
+    if (target_index == -1) {
+        target_index = free_frame(); // Kick the oldest one out
+    }
+
+    // 4. Place the Page
+    if (target_index != -1) {
+        memory_table[target_index].VPN = VPN;
+        memory_table[target_index].is_valid = true;
+
+        // IMPORTANT: Add to Queue only on placement (Miss)
+        MemoryQueue.push(VPN);
+        return target_index;
+    }
+
+    return -1; // Should not be reached
+}
+
+void generate_test_file() {
+    FILE *f = fopen("input.txt", "w");
+    if (f == NULL) {
+        perror("Error creating input.txt");
+        exit(1);
+    }
+
+    // Phase 1: Fill Memory (1..20)
+    for (int i = 1; i <= 20; i++) {
+        fprintf(f, "%d ", i);
+    }
+    // Phase 2: Hits (1, 10, 15)
+    fprintf(f, "1 10 15 ");
+    // Phase 3: Eviction (21 kills 1)
+    fprintf(f, "21 ");
+    // Phase 4: Miss Check (1 is gone, so 1 kills 2)
+    fprintf(f, "1 ");
+
+    fclose(f);
+    printf("✅ input.txt created.\n");
 }
 
 int main() {
-    int Accesses[] = {1, 2, 3, 2, 1};
-    int n = 5;
-
+    // 1. Setup
+    generate_test_file();
     init_list();
 
-    for (int i = 0; i < n; ++i) {
-        bool hit = check_Page(Accesses[i]);
+    // 2. Open File
+    FILE *f = fopen("input.txt", "r");
+    if (!f) { perror("Failed to open input.txt"); return 1; }
 
-        if (hit)
-            cout << "Access " << Accesses[i] << " -> HIT\n";
-        else
-            cout << "Access " << Accesses[i] << " -> MISS\n";
+    int vpn;
+    printf("\n--- Starting Simulation ---\n");
+
+    // 3. Run Simulation Loop
+    while (fscanf(f, "%d", &vpn) == 1) {
+        printf("Request: %d ... ", vpn);
+
+        int old_misses = stats.misses;
+        get_frame(vpn);
+
+        if (stats.misses > old_misses) {
+            printf("MISS\n");
+        } else {
+            printf("HIT\n");
+        }
     }
 
-    cout << "\n--- Stats ---\n";
-    cout << "Accesses: " << stats.accesses << '\n';
-    cout << "Hits: " << stats.hits << '\n';
-    cout << "Misses: " << stats.misses << '\n';
-    cout << "Compulsory Misses: " << stats.compulsory_misses << '\n';
+    fclose(f);
+
+    // 4. Final Stats
+    printf("\n=== Final Results ===\n");
+    printf("Total Accesses:    %d\n", stats.accesses);
+    printf("Hits:              %d\n", stats.hits);
+    printf("Misses:            %d\n", stats.misses);
+    printf("Compulsory Misses: %d\n", stats.compulsory_misses);
 
     return 0;
 }
