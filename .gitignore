@@ -1,1 +1,13 @@
+# Ignore build folders
+cmake-build-debug/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+*.o
+*.exe
+
+# Ignore CLion / JetBrains IDE files
 .idea/
+*.iml
+.idea/
+cmake-build-debug/
