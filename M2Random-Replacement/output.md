@@ -1,13 +1,5 @@
 
 # Virtual Memory Replacement Policy Simulator
-
-## Execution Information
-
-**Working Directory:** `/mnt/d/clion/Virtual Memory Replacement Policy Simulator`  
-**Command:** `./main`
-
----
-
 ## Simulation Setup
 
 ✅ **Heavy 'input.txt' created** (1000 requests)
@@ -129,9 +121,3 @@ _... (continued for 970+ evictions throughout the simulation) ..._
 - ❌ May evict frequently-used pages
 
 ---
-
-
-
-"D:\obsidian\OS\output.md"
-
-
