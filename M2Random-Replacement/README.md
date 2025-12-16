@@ -17,7 +17,7 @@ Unlike standard textbook implementations, this simulator features:
 - **🎲 Custom Random Number Generation:** Implements a Linear Congruential Generator (LCG) from scratch to ensure deterministic debugging and high-quality randomness
 - **📺 Real-Time Terminal Visualizer:** Live visualization of page faults and evictions as they happen
 - **📈 Scalable Trace Generation:** Capable of simulating thousands of memory requests with configurable "Locality of Reference" (Hot/Cold sets)
-**Persistent Output**: After running the simulation, all results are saved in a beautifully formatted markdown file, [**output.md**](https://github.com/Mido191020/Swaping-Simulator/blob/main/M2Random-Replacement/output.md), which can be used for post-simulation analysis.
+- ** **Persistent Output**: After running the simulation, all results are saved in a beautifully formatted markdown file, [**output.md**](https://github.com/Mido191020/Swaping-Simulator/blob/main/M2Random-Replacement/output.md), which can be used for post-simulation analysis.
 
 ---
 
