@@ -1,6 +1,4 @@
----
-state: "[[Idea]]"
----
+
 # Virtual Memory Replacement Policy Simulator
 
 ## Execution Information
