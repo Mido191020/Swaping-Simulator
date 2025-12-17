@@ -1,107 +1,109 @@
-# Virtual Memory Swaping-Simulator Simulator
+# Virtual Memory Swapping Simulator
 
-**A learning-first simulator to understand virtual memory, page replacement, and caching policies.**
+A trace-driven simulator built to analyze and visualize operating system memory management policies.
 
----
+## Project Overview
 
-## 📌 Project Goal
+This project simulates how an operating system manages physical memory frames under pressure. It was developed to understand and visualize the logic behind classic page replacement algorithms.
 
-This project simulates how an operating system manages **virtual memory** and **page replacement**.
+The simulator runs in user space, allowing for detailed inspection of algorithmic behavior, hit/miss statistics, and real-time visualization of memory states.
 
-**You will learn to:**
+**Learning Outcomes:**
 
-* Track pages in RAM
-* Measure **hits** and **misses**
-* Implement classic **page replacement algorithms**
-* Visualize the behavior of different policies under various workloads
+- **Memory Virtualization:** Understanding the mapping between Virtual Page Numbers (VPN) and Physical Frames
+- **Locality of Reference:** Simulating realistic workload patterns to test algorithm effectiveness
+- **Algorithmic Efficiency:** Comparing different replacement policies and their trade-offs
 
-This project is **educational**, not kernel-level code. Everything runs in user space.
+## Project Architecture
 
----
+The project evolved through three stages, each implementing a progressively more sophisticated algorithm.
 
-## 🗺️ Milestones
+### Milestone 1: FIFO (First-In, First-Out)
 
-### **Milestone 0 – Foundations**
+**Location:** `M1/`
 
-**Goal:** Set up the simulator skeleton.
+**Approach:** The oldest page loaded into memory is the first one evicted, similar to a queue structure.
 
-**Tasks:**
+**Result:** Simple to implement but suffers from Belady's Anomaly, where adding more memory can paradoxically increase miss rates.
 
-* Define **MemoryFrame** structure (`VPN`, `valid bit`)
-* Initialize memory
-* Implement **page access logic** (check if page is in memory)
-* Track **accesses, hits, misses, compulsory misses**
-* Test with a **small, manual access list**
+### Milestone 2: Random Replacement
 
-**Learning outcome:** Understand memory lookup and tracking **before implementing replacement policies**.
+**Location:** `M2Random-Replacement/`
 
----
+**Approach:** When memory is full, a random frame is selected for eviction.
 
-### **Milestone 1 – FIFO Replacement**
+**Implementation:** Uses a custom Linear Congruential Generator (Park-Miller algorithm) for robust, high-speed randomness without external dependencies.
 
-**Goal:** Implement **First-In, First-Out** eviction.
+**Result:** Better than FIFO in worst-case scenarios, but unpredictable since it ignores page usage patterns.
 
-**Tasks:**
+### Milestone 3: Least Recently Used (LRU)
 
-* Add **eviction logic** when memory is full
-* Track **cold misses vs capacity misses**
-* Understand how FIFO ignores locality
+**Location:** `M3LRU/` and `main.cpp`
 
-**Learning outcome:** Learn why naive eviction can cause poor performance.
+**Approach:** Tracks temporal locality by assuming recently accessed pages will likely be accessed again soon.
 
----
+**Implementation:**
+- Global Logical Clock that increments on every memory request
+- Timestamping system where each frame stores its last access time
+- Eviction mechanism that selects the frame with the oldest timestamp
 
-### **Milestone 2 – Random Replacement**
+**Result:** Most efficient policy for typical workloads, successfully protecting frequently accessed pages from eviction.
 
-**Goal:** Compare with a stateless policy.
+## Performance Comparison
 
-**Tasks:**
+Testing was performed using a workload of 1,000 requests with 80% locality (80% of requests target 20% of pages).
 
-* Randomly evict a page when memory is full
-* Control **random seed** for repeatability
-* Compare hit/miss statistics with FIFO
+| Algorithm | Hit Rate | Misses | Analysis |
+|-----------|----------|--------|----------|
+| Random (M2) | ~76.0% | ~240 | Solid performance, but occasionally evicts popular pages |
+| LRU (M3) | 84.0% | 160 | Superior performance by identifying and protecting frequently accessed pages |
 
-**Learning outcome:** Observe the performance difference between deterministic and random eviction.
+## Features
 
----
+### Memory State Visualization
 
-### **Milestone 3 – Optimal (Belady’s MIN)**
+The simulator includes a real-time terminal visualizer showing both the contents of memory and their recency information:
 
-**Goal:** Implement an **offline oracle**.
+```
+REQ:  8 -> HIT  
+  VPNS: [  2 | 44 |  8 | .. ] 
+  TIME: [ 26 | 27 | 95 | .. ] (Clock: 95)
+```
 
-**Tasks:**
+### Execution Logging
 
-* Use **future knowledge** of page accesses
-* Evict the page that will be used **farthest in the future**
+Complete execution history is written to `visualizer_log.txt` for detailed analysis and debugging.
 
-**Learning outcome:** Establish an **upper bound** for replacement policy performance.
+## Directory Structure
 
----
+- `M1/` - FIFO implementation
+- `M2Random-Replacement/` - Random policy implementation
+- `M3LRU/` - LRU implementation with detailed documentation
+- `main.cpp` - Final production build with complete LRU engine and visualization
+- `visualizer_log.txt` - Generated execution log
 
-### **Milestone 4 – Perfect LRU**
+## How to Run
 
-**Goal:** Implement **Least Recently Used (perfect)**.
+**Compile:**
+```bash
+g++ main.cpp -o vm_sim
+```
 
-**Tasks:**
+**Execute:**
+```bash
+./vm_sim
+```
 
-* Maintain **access timestamp** for each page
-* Evict the **oldest page**
-* Compare with FIFO and Random
+The program automatically generates a workload trace and runs the simulation.
 
-**Learning outcome:** Understand **true LRU behavior** and its cost.
+## Technical References
 
----
+- Random Number Generation: GeeksForGeeks - "Random Number Generator: How Do Computers Generate Random Numbers?"
+- Linear Congruential Generators: MidoXMax Hashnode - "Understanding LCG"
+- OS Concepts: Silberschatz, Galvin, and Gagne - "Operating System Concepts"
 
-### **Milestone 5 – Clock (Approximate LRU)**
+## Author
 
-**Goal:** Simulate an **OS-realistic LRU approximation**.
+Built as an educational project to explore operating systems concepts and memory management algorithms.
 
-**Tasks:**
-
-* Use **reference bits**
-* Implement **clock hand pointer** logic
-* Compare results with perfect LRU
-
-**Learning outcome:** Learn how OSes implement LRU efficiently.
-
----
+December 2025
