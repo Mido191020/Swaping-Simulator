@@ -1,109 +1,106 @@
-# Virtual Memory Swapping Simulator
+# Swapping & Page Replacement Simulator
 
-A trace-driven simulator built to analyze and visualize operating system memory management policies.
+<div align="center">
+  <img src="https://img.shields.io/badge/Language-C++-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" />
+  <img src="https://img.shields.io/badge/Concept-Operating_Systems-4D4D4D?style=for-the-badge&logo=linux&logoColor=white" />
+  <img src="https://img.shields.io/badge/Pattern-Memory_Simulation-00A98F?style=for-the-badge" />
+</div>
 
-## Project Overview
+<br/>
 
-This project simulates how an operating system manages physical memory frames under pressure. It was developed to understand and visualize the logic behind classic page replacement algorithms.
+## 📌 Project Overview
 
-The simulator runs in user space, allowing for detailed inspection of algorithmic behavior, hit/miss statistics, and real-time visualization of memory states.
+The **Swapping & Page Replacement Simulator** is a dedicated Operating Systems memory management project built in generic C++. It explicitly models the mathematical and structural behavior of a Virtual Memory system when an operating system encounters a **Page Fault** and must arbitrate which pages to swap between main memory (RAM) and secondary storage (Disk Swap Space).
 
-**Learning Outcomes:**
+This simulator visualizes how Capacity Misses and Compulsory Misses happen over time in a fixed memory constraint, comparing the efficiency of fundamental replacement policies.
 
-- **Memory Virtualization:** Understanding the mapping between Virtual Page Numbers (VPN) and Physical Frames
-- **Locality of Reference:** Simulating realistic workload patterns to test algorithm effectiveness
-- **Algorithmic Efficiency:** Comparing different replacement policies and their trade-offs
+---
 
-## Project Architecture
+## ⚙️ OS Concepts & Algorithms Modeled
 
-The project evolved through three stages, each implementing a progressively more sophisticated algorithm.
+Through the `M1`, `M2`, and `M3` modules, this project demonstrates three major Page Replacement Algorithms in action on a constrained 20-frame RAM simulation:
 
-### Milestone 1: FIFO (First-In, First-Out)
+### 1️⃣ First-In, First-Out (FIFO)
 
-**Location:** `M1/`
+- **Module:** `M1/main.cpp`
+- **Mechanism:** Maintains a queue of Virtual Page Numbers (VPNs) mapped into RAM.
+- **Eviction:** When a Capacity Miss occurs, the oldest loaded page at the front of the queue is swapped out.
 
-**Approach:** The oldest page loaded into memory is the first one evicted, similar to a queue structure.
+### 2️⃣ Random Replacement
 
-**Result:** Simple to implement but suffers from Belady's Anomaly, where adding more memory can paradoxically increase miss rates.
+- **Module:** `M2Random-Replacement/main.cpp`
+- **Mechanism:** Implements a Park-Miller Linear Congruential Generator (LCG) to select an eviction victim entirely by pseudo-random chance.
+- **Eviction:** Drops a purely random loaded page to fetch the incoming page fault.
 
-### Milestone 2: Random Replacement
+### 3️⃣ Least Recently Used (LRU)
 
-**Location:** `M2Random-Replacement/`
+- **Module:** `M3LRU/main.cpp`
+- **Mechanism:** Utilizes a global timestamp clock incremented on every memory reference, saving the access time of hits and newly loaded pages.
+- **Eviction:** When memory fills up, the system scans the RAM array for the minimum timestamp and evicts the historically least accessed frame.
 
-**Approach:** When memory is full, a random frame is selected for eviction.
+---
 
-**Implementation:** Uses a custom Linear Congruential Generator (Park-Miller algorithm) for robust, high-speed randomness without external dependencies.
+## 🏗️ Architecture & Model Design
 
-**Result:** Better than FIFO in worst-case scenarios, but unpredictable since it ignores page usage patterns.
+- **Main Memory Layout:** RAM is modeled strictly as a 20-slot block using structural primitives `MemoryFrame memory_table[20]`.
+- **Secondary Storage:** Handled implicitly. When a page is absent from the `memory_table`, it triggers an OS-level fetch from disk.
+- **Process Trace Generation:** The system models a heavy single-process execution stream (up to 1,000 memory requests) generated programmatically with varying temporal locality (80% hot-pages, 20% cold-pages distribution in `M3`).
 
-### Milestone 3: Least Recently Used (LRU)
+---
 
-**Location:** `M3LRU/` and `main.cpp`
+## 🚀 Execution Flow & Features
 
-**Approach:** Tracks temporal locality by assuming recently accessed pages will likely be accessed again soon.
+During runtime, the simulator evaluates the stream of Virtual Page Numbers:
 
-**Implementation:**
-- Global Logical Clock that increments on every memory request
-- Timestamping system where each frame stores its last access time
-- Eviction mechanism that selects the frame with the oldest timestamp
+1. **Search Phase:** The MMU translates the reference, checking RAM for `vpn`.
+2. **Page Hit!:** If found, the hit statistics index correctly. (LRU updates the access clock).
+3. **Compulsory Miss:** The page isn't anywhere in RAM, but frames happen to be empty. It automatically occupies an empty spot.
+4. **Capacity Miss (Swap Operation):** The page isn't in RAM, *and* all 20 frames are full. The OS triggers an Eviction Algorithm to mathematically represent a Swap-Out to disk to open up a free frame for the Swap-In.
 
-**Result:** Most efficient policy for typical workloads, successfully protecting frequently accessed pages from eviction.
+### 🎨 Live Graphical Terminal Visualization
 
-## Performance Comparison
+The simulator provides vivid, color-coded ANSI terminal outputs out-of-the-box dynamically charting RAM state:
 
-Testing was performed using a workload of 1,000 requests with 80% locality (80% of requests target 20% of pages).
+- **`Green` Slots:** Indicates a registered Hit.
+- **`Red` Slots:** Indicates a localized Miss and recent swap-in event.
+- Real-time logging output is saved continuously into an automated artifact `visualizer_log.txt`.
 
-| Algorithm | Hit Rate | Misses | Analysis |
-|-----------|----------|--------|----------|
-| Random (M2) | ~76.0% | ~240 | Solid performance, but occasionally evicts popular pages |
-| LRU (M3) | 84.0% | 160 | Superior performance by identifying and protecting frequently accessed pages |
+### 📊 End-Of-Run Statistics
 
-## Features
+Accurate readouts of hit-rate efficiencies are calculated upon conclusion:
 
-### Memory State Visualization
+- **Total Accesses**
+- **Hits** / **Misses**
+- **Compulsory Misses vs Capacity Misses**
+- Final **Hit Rate %** based on the generated reference trace.
 
-The simulator includes a real-time terminal visualizer showing both the contents of memory and their recency information:
+---
 
-```
-REQ:  8 -> HIT  
-  VPNS: [  2 | 44 |  8 | .. ] 
-  TIME: [ 26 | 27 | 95 | .. ] (Clock: 95)
-```
+## 🛠️ Build & Installation Guide
 
-### Execution Logging
+You will need a standard **C++ Builder** environment (GCC/Clang) and **CMake**.
 
-Complete execution history is written to `visualizer_log.txt` for detailed analysis and debugging.
-
-## Directory Structure
-
-- `M1/` - FIFO implementation
-- `M2Random-Replacement/` - Random policy implementation
-- `M3LRU/` - LRU implementation with detailed documentation
-- `main.cpp` - Final production build with complete LRU engine and visualization
-- `visualizer_log.txt` - Generated execution log
-
-## How to Run
-
-**Compile:**
 ```bash
-g++ main.cpp -o vm_sim
+# 1. Clone the repository
+git clone https://github.com/Mido191020/Swaping-Simulator.git
+cd Swaping-Simulator
+
+# 2. Enter into one of the 3 specific Page Replacement modules
+cd M3LRU 
+
+# 3. Setup CMake context
+mkdir build
+cd build
+cmake ..
+make
+
+# 4. Run the simulator trace
+./swaping_simulator
+# Observe the colored GUI logic terminal render!
 ```
 
-**Execute:**
-```bash
-./vm_sim
-```
+---
 
-The program automatically generates a workload trace and runs the simulation.
-
-## Technical References
-
-- Random Number Generation: GeeksForGeeks - "Random Number Generator: How Do Computers Generate Random Numbers?"
-- Linear Congruential Generators: MidoXMax Hashnode - "Understanding LCG"
-- OS Concepts: Silberschatz, Galvin, and Gagne - "Operating System Concepts"
-
-## Author
-
-Built as an educational project to explore operating systems concepts and memory management algorithms.
-
-December 2025
+<div align="center">
+   <i>Demonstrating foundational Systems Programming logic & Memory Hierarchy optimization strategies.</i>
+</div>
